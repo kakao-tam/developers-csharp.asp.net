@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace AspNetMvcApp.Controllers
 {
-    [Route("api/kakao")]
+    [Route("")]
     public class KakaoController : Controller
     {
         private readonly IKakaoService _kakaoService;

@@ -9,9 +9,9 @@ namespace AspNetMvcApp.Services
         private const string KAKAO_API_BASE_URL = "https://kapi.kakao.com";
         private const string KAKAO_AUTH_BASE_URL = "https://kauth.kakao.com";
         private readonly string _clientId;
-        private readonly string _redirectUri;
         private readonly string _clientSecret;
-
+        private readonly string _redirectUri;
+        
         public KakaoService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
@@ -26,7 +26,7 @@ namespace AspNetMvcApp.Services
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        private async Task<string> SendRequest(HttpMethod method, string url, HttpContent content = null)
+        private async Task<string> Call(HttpMethod method, string url, HttpContent? content = null)
         {
             try
             {
@@ -74,7 +74,7 @@ namespace AspNetMvcApp.Services
             });
             content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
 
-            var response = await SendRequest(HttpMethod.Post, $"{KAKAO_AUTH_BASE_URL}/oauth/token", content);
+            var response = await Call(HttpMethod.Post, $"{KAKAO_AUTH_BASE_URL}/oauth/token", content);
             var responseData = JsonSerializer.Deserialize<JsonElement>(response);
             
             if (responseData.TryGetProperty("error", out var error))
@@ -118,27 +118,7 @@ namespace AspNetMvcApp.Services
                 return (false, JsonSerializer.Serialize(new { error = "Not logged in" }));
 
             SetHeaders(accessToken);
-            var response = await SendRequest(HttpMethod.Get, $"{KAKAO_API_BASE_URL}/v2/user/me");
-            return (true, response);
-        }
-
-        public async Task<(bool Success, string Response)> Logout(string accessToken)
-        {
-            if (string.IsNullOrEmpty(accessToken))
-                return (false, JsonSerializer.Serialize(new { error = "Not logged in" }));
-
-            SetHeaders(accessToken);
-            var response = await SendRequest(HttpMethod.Post, $"{KAKAO_API_BASE_URL}/v1/user/logout");
-            return (true, response);
-        }
-
-        public async Task<(bool Success, string Response)> Unlink(string accessToken)
-        {
-            if (string.IsNullOrEmpty(accessToken))
-                return (false, JsonSerializer.Serialize(new { error = "Not logged in" }));
-
-            SetHeaders(accessToken);
-            var response = await SendRequest(HttpMethod.Post, $"{KAKAO_API_BASE_URL}/v1/user/unlink");
+            var response = await Call(HttpMethod.Get, $"{KAKAO_API_BASE_URL}/v2/user/me");
             return (true, response);
         }
 
@@ -148,7 +128,7 @@ namespace AspNetMvcApp.Services
                 return (false, JsonSerializer.Serialize(new { error = "Not logged in" }));
 
             SetHeaders(accessToken);
-            var response = await SendRequest(HttpMethod.Get, $"{KAKAO_API_BASE_URL}/v1/api/talk/friends");
+            var response = await Call(HttpMethod.Get, $"{KAKAO_API_BASE_URL}/v1/api/talk/friends");
             return (true, response);
         }
 
@@ -175,7 +155,7 @@ namespace AspNetMvcApp.Services
                 new KeyValuePair<string, string>("template_object", JsonSerializer.Serialize(templateObject))
             });
             
-            var response = await SendRequest(HttpMethod.Post, $"{KAKAO_API_BASE_URL}/v2/api/talk/memo/default/send", content);
+            var response = await Call(HttpMethod.Post, $"{KAKAO_API_BASE_URL}/v2/api/talk/memo/default/send", content);
             return (true, response);
         }
 
@@ -200,8 +180,29 @@ namespace AspNetMvcApp.Services
                 }))
             });
 
-            var response = await SendRequest(HttpMethod.Post, $"{KAKAO_API_BASE_URL}/v1/api/talk/friends/message/default/send", content);
+            var response = await Call(HttpMethod.Post, $"{KAKAO_API_BASE_URL}/v1/api/talk/friends/message/default/send", content);
             return (true, response);
         }
+
+        public async Task<(bool Success, string Response)> Logout(string accessToken)
+        {
+            if (string.IsNullOrEmpty(accessToken))
+                return (false, JsonSerializer.Serialize(new { error = "Not logged in" }));
+
+            SetHeaders(accessToken);
+            var response = await Call(HttpMethod.Post, $"{KAKAO_API_BASE_URL}/v1/user/logout");
+            return (true, response);
+        }
+
+        public async Task<(bool Success, string Response)> Unlink(string accessToken)
+        {
+            if (string.IsNullOrEmpty(accessToken))
+                return (false, JsonSerializer.Serialize(new { error = "Not logged in" }));
+
+            SetHeaders(accessToken);
+            var response = await Call(HttpMethod.Post, $"{KAKAO_API_BASE_URL}/v1/user/unlink");
+            return (true, response);
+        }
+
     }
 } 
